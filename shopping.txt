@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Khen Shopping Mall</title>
+    <style>
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #4ecdc4;
+            --accent: #ffe66d;
+            --dark: #2f2f2f;
+            --white: #ffffff;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden; height: 100vh;
+            background-color: #87CEEB;
+        }
+
+        /* --- START SCREEN --- */
+        #start-screen {
+            position: fixed; width: 100%; height: 100%;
+            background: url('background shopping and buttons.jpg') center/cover no-repeat;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+
+        .btn-start {
+            padding: 25px 60px; font-size: 3rem;
+            background: #ffcc00; color: #333;
+            border: 8px solid white; border-radius: 60px;
+            cursor: pointer; box-shadow: 0 10px 0 #ccaa00;
+            transition: transform 0.2s; font-weight: bold;
+        }
+        .btn-start:hover { transform: scale(1.1); }
+
+        /* --- MAIN INTERFACE --- */
+        #game-container {
+            display: none; height: 100vh;
+            grid-template-columns: 1fr 380px;
+            background: url('background shopping and buttons.jpg') center/cover no-repeat;
+        }
+
+        /* --- SHOP GRID --- */
+        .shop-area {
+            padding: 40px; overflow-y: auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 25px; background: rgba(255, 255, 255, 0.7);
+            margin: 20px; border-radius: 30px;
+        }
+
+        .item-card {
+            background: white; border-radius: 20px; padding: 15px;
+            text-align: center; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            position: relative; filter: grayscale(100%) brightness(0.7);
+            pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid #ddd;
+        }
+
+        .item-card.unlocked {
+            filter: none; pointer-events: auto; cursor: pointer;
+            border-color: var(--secondary); background: #fff;
+        }
+
+        .item-card.unlocked:hover { transform: scale(1.05) rotate(2deg); }
+        
+        .item-card.glow { 
+            animation: bounceGlow 0.6s infinite alternate; 
+            border-color: var(--accent);
+        }
+
+        @keyframes bounceGlow {
+            from { box-shadow: 0 0 10px var(--accent); transform: translateY(0); }
+            to { box-shadow: 0 0 30px var(--accent); transform: translateY(-10px); }
+        }
+
+        .item-img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
+        .item-price { color: #2ecc71; font-weight: bold; font-size: 1.4rem; }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.9);
+            border-left: 8px solid var(--primary);
+            padding: 25px; display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .wallet-display {
+            font-size: 1.8rem; background: var(--accent);
+            padding: 15px; border-radius: 15px;
+            text-align: center; border: 4px solid var(--dark);
+        }
+
+        .cart-box {
+            flex-grow: 1; border: 3px dashed #aaa;
+            border-radius: 15px; padding: 15px; overflow-y: auto;
+            background: white;
+        }
+
+        .nav-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-ui { 
+            padding: 12px; border: none; border-radius: 12px; cursor: pointer; 
+            font-weight: bold; color: white; transition: 0.2s;
+        }
+        .btn-wheel { background: #9b59b6; box-shadow: 0 4px #7d3c98; }
+        .btn-kb { background: #3498db; box-shadow: 0 4px #217dbb; }
+        .btn-earn { background: #27ae60; box-shadow: 0 4px #1e8449; }
+        .btn-pay { background: var(--primary); grid-column: span 2; font-size: 1.5rem; box-shadow: 0 6px #c44545; }
+        .btn-ui:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- DRAGGABLE PANELS --- */
+        .draggable {
+            position: absolute; z-index: 2000;
+            background: white; border: 5px solid var(--dark);
+            border-radius: 20px; display: none;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .panel-header {
+            background: var(--dark); color: white;
+            padding: 12px 20px; cursor: move;
+            display: flex; justify-content: space-between;
+            border-radius: 14px 14px 0 0; font-weight: bold;
+        }
+
+        /* --- KEYBOARD --- */
+        #kb-panel { width: 450px; padding: 20px; top: 150px; left: 150px; }
+        #kb-screen {
+            background: #eef2f3; border: 4px solid #333;
+            color: #333; height: 70px; font-size: 2.2rem;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 20px; border-radius: 10px;
+            text-transform: uppercase; letter-spacing: 4px;
+        }
+        .keys-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .key {
+            padding: 12px; background: #f8f9fa; border: 2px solid #ccc;
+            text-align: center; cursor: pointer; border-radius: 8px;
+            font-weight: bold; font-size: 1.1rem;
+        }
+        .key:hover { background: #e2e6ea; }
+        .key:active { background: #dae0e5; transform: scale(0.95); }
+
+        /* --- WHEEL --- */
+        #wheel-panel { width: 420px; padding-bottom: 20px; top: 100px; left: 30%; text-align: center; }
+        #wheel-container {
+            width: 320px; height: 320px; margin: 25px auto;
+            border: 12px solid var(--dark); border-radius: 50%;
+            position: relative; transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
+            background: conic-gradient(from 0deg, #ff6b6b 0 30deg, #4ecdc4 30deg 60deg, #ffe66d 60deg 90deg, #9b59b6 90deg 120deg, #3498db 120deg 150deg, #27ae60 150deg 180deg, #f39c12 180deg 210deg, #e74c3c 210deg 240deg, #1abc9c 240deg 270deg, #d35400 270deg 300deg, #7f8c8d 300deg 330deg, #2c3e50 330deg 360deg);
+        }
+        .wheel-pointer {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 20px solid transparent;
+            border-right: 20px solid transparent; border-top: 40px solid var(--dark);
+            z-index: 10;
+        }
+
+        /* --- MODALS --- */
+        #modal-overlay {
+            position: fixed; top:0; left:0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none;
+            z-index: 3000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 40px; border-radius: 30px;
+            width: 85%; max-width: 700px; max-height: 85vh; overflow-y: auto;
+        }
+        .grammar-q { 
+            background: #f0f7ff; padding: 20px; border-radius: 15px;
+            margin-bottom: 20px; border-left: 10px solid var(--secondary);
+        }
+        .grammar-q input { 
+            padding: 12px; width: 90%; font-size: 1.2rem; 
+            border: 3px solid #ddd; border-radius: 10px; margin-top: 10px;
+        }
+
+        .receipt {
+            font-family: 'Courier New', Courier, monospace;
+            padding: 30px; border: 2px solid #000; background: #fff;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <button class="btn-start" onclick="startGame()">Start Shopping</button>
+    </div>
+
+    <div id="game-container">
+        <div class="shop-area" id="shop-grid"></div>
+
+        <div class="sidebar">
+            <div class="wallet-display">💵 Balance: $<span id="balance">0</span></div>
+            <div class="nav-btns">
+                <button class="btn-ui btn-wheel" onclick="togglePanel('wheel-panel')">🎡 Open Wheel</button>
+                <button class="btn-ui btn-kb" onclick="togglePanel('kb-panel')">⌨️ Open Keyboard</button>
+                <button class="btn-ui btn-earn" onclick="earnMoney()">💰 Earn Money</button>
+                <button class="btn-ui btn-pay" onclick="openPayment()">🛒 PAY NOW</button>
+            </div>
+            <h3 style="margin-bottom:5px">My Shopping Bag</h3>
+            <div class="cart-box" id="cart-list">The bag is empty!</div>
+            <div style="font-weight: bold; font-size: 1.5rem; color: var(--primary);">Total: $<span id="total-cost">0</span></div>
+        </div>
+    </div>
+
+    <div id="kb-panel" class="draggable">
+        <div class="panel-header" onmousedown="dragStart(event, 'kb-panel')">
+            <span>🔤 Clothing Spelling Test</span>
+            <span style="cursor:pointer" onclick="togglePanel('kb-panel')">✖</span>
+        </div>
+        <div id="kb-screen">...</div>
+        <div class="keys-grid" id="keys-grid"></div>
+        <button class="btn-ui btn-kb" style="width:100%; margin-top:15px; font-size:1.2rem" onclick="checkSpelling()">CHECK SPELLING</button>
+    </div>
+
+    <div id="wheel-panel" class="draggable">
+        <div class="panel-header" onmousedown="dragStart(event, 'wheel-panel')">
+            <span>🎡 Spin for Items</span>
+            <span style="cursor:pointer" onclick="togglePanel('wheel-panel')">✖</span>
+        </div>
+        <div style="position:relative">
+            <div class="wheel-pointer"></div>
+            <div id="wheel-container"></div>
+        </div>
+        <button class="btn-ui btn-wheel" style="width:80%; font-size:1.2rem" onclick="spinWheel()">SPIN THE WHEEL!</button>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-content" id="modal-body"></div>
+    </div>
+
+    <script>
+        /* --- UPDATED DATA WITH YOUR UPLOADED FILENAMES --- */
+        const inventory = [
+            { id: 'dress', price: 300, plural: false, img: 'dress.png' }, // Using standard names, update if different
+            { id: 'skirt', price: 200, plural: false, img: 'skirt.png' },
+            { id: 'sweater', price: 400, plural: false, img: 'sweater.png' },
+            { id: 'T-shirt', price: 200, plural: false, img: 't-shirt.png' },
+            { id: 'pants', price: 200, plural: true, img: 'pants.png' },
+            { id: 'shorts', price: 100, plural: true, img: 'shorts.png' },
+            { id: 'sneakers', price: 600, plural: true, img: 'sneakers.jpg' },
+            { id: 'socks', price: 100, plural: true, img: 'socks.png' },
+            { id: 'coat', price: 700, plural: false, img: 'coat.jpg' },
+            { id: 'vest', price: 300, plural: false, img: 'vest.png' },
+            { id: 'scarf', price: 200, plural: false, img: 'scarf.png' },
+            { id: 'gloves', price: 200, plural: true, img: 'gloves.jpg' },
+            { id: 'sandals', price: 400, plural: true, img: 'sandals.png' }
+        ];
+
+        let balance = 0;
+        let cart = {};
+        let unlockedItems = new Set();
+        let currentTyped = "";
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'grid';
+            initShop();
+            initKeyboard();
+        }
+
+        function initShop() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+            inventory.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `item-card ${unlockedItems.has(item.id) ? 'unlocked' : ''}`;
+                div.id = `card-${item.id}`;
+                div.onclick = () => addToCart(item.id);
+                div.innerHTML = `
+                    <img src="${item.img}" class="item-img" onerror="this.src='https://via.placeholder.com/100?text=${item.id}'">
+                    <div style="text-transform: capitalize; font-weight:bold; font-size:1.1rem">${item.id}</div>
+                    <div class="item-price">$${item.price}</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function addToCart(id) {
+            cart[id] = (cart[id] || 0) + 1;
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-list');
+            let html = '';
+            let total = 0;
+            for (let id in cart) {
+                const item = inventory.find(i => i.id === id);
+                html += `<div style="margin-bottom:8px">🛒 ${id} x${cart[id]} ($${item.price * cart[id]})</div>`;
+                total += item.price * cart[id];
+            }
+            list.innerHTML = html || 'The bag is empty!';
+            document.getElementById('total-cost').innerText = total;
+        }
+
+        /* --- KEYBOARD LOGIC --- */
+        function initKeyboard() {
+            const grid = document.getElementById('keys-grid');
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ-".split('').forEach(char => {
+                const k = document.createElement('div');
+                k.className = 'key';
+                k.innerText = char;
+                k.onclick = () => { currentTyped += char; updateKBScreen(); };
+                grid.appendChild(k);
+            });
+            const del = document.createElement('div');
+            del.className = 'key'; del.innerText = 'DEL'; del.style.background = "#ff6b6b"; del.style.color = "white";
+            del.onclick = () => { currentTyped = currentTyped.slice(0,-1); updateKBScreen(); };
+            grid.appendChild(del);
+        }
+
+        function updateKBScreen() {
+            document.getElementById('kb-screen').innerText = currentTyped || "...";
+        }
+
+        function checkSpelling() {
+            const found = inventory.find(i => i.id.toUpperCase() === currentTyped.toUpperCase());
+            if (found) {
+                unlockedItems.add(found.id);
+                initShop();
+                const card = document.getElementById(`card-${found.id}`);
+                card.classList.add('glow');
+                currentTyped = "";
+                updateKBScreen();
+                alert(`🔓 You unlocked the ${found.id.toUpperCase()}!`);
+            } else {
+                alert("Incorrect spelling! Try again.");
+                currentTyped = "";
+                updateKBScreen();
+            }
+        }
+
+        /* --- PAYMENT & GRAMMAR --- */
+        function openPayment() {
+            const total = parseInt(document.getElementById('total-cost').innerText);
+            if (total === 0) return alert("Your bag is empty!");
+            if (balance < total) return alert("You need more money! Click 'Earn Money'.");
+
+            const modal = document.getElementById('modal-overlay');
+            const body = document.getElementById('modal-body');
+            modal.style.display = 'flex';
+            
+            let questionsHTML = '<h2 style="color:var(--primary)">📝 ESL Grammar Challenge</h2><p>Finish these sentences to pay:</p>';
+            for (let id in cart) {
+                const item = inventory.find(i => i.id === id);
+                // Grammar Logic: Pants and Shorts are ALWAYS plural
+                const isPlural = item.plural || cart[id] > 1;
+                const qText = isPlural ? `How much are the ${id}?` : `How much is the ${id}?`;
+                const expected = isPlural ? `They're ${item.price * cart[id]} dollars` : `It's ${item.price * cart[id]} dollars`;
+                
+                questionsHTML += `
+                    <div class="grammar-q">
+                        <p><strong>${qText}</strong></p>
+                        <input type="text" class="g-input" data-ans="${expected.toLowerCase()}" placeholder="Type: ${expected}">
+                    </div>
+                `;
+            }
+            questionsHTML += `<button class="btn-ui btn-pay" onclick="validateGrammar()">COMPLETE PURCHASE</button>`;
+            body.innerHTML = questionsHTML;
+        }
+
+        function validateGrammar() {
+            const inputs = document.querySelectorAll('.g-input');
+            let allCorrect = true;
+            inputs.forEach(input => {
+                const userVal = input.value.toLowerCase().trim().replace(/[.,!]/g, "");
+                const correctVal = input.getAttribute('data-ans').toLowerCase().trim().replace(/[.,!]/g, "");
+                
+                if (userVal !== correctVal) {
+                    input.style.borderColor = "red";
+                    allCorrect = false;
+                } else {
+                    input.style.borderColor = "green";
+                }
+            });
+
+            if (allCorrect) {
+                showReceipt();
+            } else {
+                alert("Check your grammar! Remember: It's ... dollars or They're ... dollars.");
+            }
+        }
+
+        function showReceipt() {
+            const total = parseInt(document.getElementById('total-cost').innerText);
+            const oldBalance = balance;
+            balance -= total;
+            document.getElementById('balance').innerText = balance;
+
+            let itemsList = '';
+            for (let id in cart) {
+                itemsList += `<p>${id.toUpperCase()} x${cart[id]} ............ $${inventory.find(i=>i.id===id).price * cart[id]}</p>`;
+            }
+
+            const body = document.getElementById('modal-body');
+            body.innerHTML = `
+                <div class="receipt">
+                    <center><h2>🛍️ TEACHER KHEN MALL</h2>
+                    <p>Official Receipt</p></center>
+                    <hr>
+                    ${itemsList}
+                    <hr>
+                    <p><strong>GRAND TOTAL: $${total}</strong></p>
+                    <p>Balance: $${oldBalance}</p>
+                    <p>Change: $${balance}</p>
+                    <hr>
+                    <center><p>Great job with your grammar!<br>See you next time!</p></center>
+                </div>
+                <button class="btn-ui btn-kb" style="width:100%; margin-top:20px; font-size:1.2rem" onclick="location.reload()">PLAY AGAIN</button>
+            `;
+        }
+
+        /* --- WHEEL & DRAG --- */
+        function spinWheel() {
+            const wheel = document.getElementById('wheel-container');
+            const deg = Math.floor(Math.random() * 3600) + 720;
+            wheel.style.transform = `rotate(${deg}deg)`;
+        }
+
+        function togglePanel(id) {
+            const p = document.getElementById(id);
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function earnMoney() {
+            balance += 200;
+            document.getElementById('balance').innerText = balance;
+            alert("💰 You completed a quiz and earned $200!");
+        }
+
+        /* DRAG LOGIC */
+        let activeEl = null, offX = 0, offY = 0;
+        function dragStart(e, id) {
+            activeEl = document.getElementById(id);
+            offX = activeEl.offsetLeft - e.clientX;
+            offY = activeEl.offsetTop - e.clientY;
+            document.onmousemove = (e) => {
+                activeEl.style.left = (e.clientX + offX) + 'px';
+                activeEl.style.top = (e.clientY + offY) + 'px';
+            };
+            document.onmouseup = () => { document.onmousemove = null; activeEl = null; };
+        }
+    </script>
+</body>
+</html>

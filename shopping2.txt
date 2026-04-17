@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Khen Shopping Mall</title>
+    <style>
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #4ecdc4;
+            --accent: #ffe66d;
+            --dark: #2f2f2f;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden; height: 100vh;
+            background-color: #87CEEB;
+        }
+
+        #start-screen {
+            position: fixed; width: 100%; height: 100%;
+            background: url('Background shop.gif') center/cover no-repeat;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+
+        .btn-start {
+            padding: 25px 60px; font-size: 3rem;
+            background: #ffcc00; color: #333;
+            border: 8px solid white; border-radius: 60px;
+            cursor: pointer; box-shadow: 0 10px 0 #ccaa00;
+            font-weight: bold;
+        }
+
+        #game-container {
+            display: none; height: 100vh;
+            grid-template-columns: 1fr 400px;
+            background: url('Background shop.gif') center/cover no-repeat;
+        }
+
+        .shop-area {
+            padding: 40px; overflow-y: auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 25px; background: rgba(255, 255, 255, 0.6);
+            margin: 20px; border-radius: 30px; backdrop-filter: blur(5px);
+        }
+
+        .item-card {
+            background: white; border-radius: 20px; padding: 15px;
+            text-align: center; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            position: relative; filter: grayscale(100%) brightness(0.7);
+            pointer-events: none; border: 4px solid #ddd;
+            transition: all 0.3s;
+        }
+
+        .item-card.unlocked { filter: none; pointer-events: auto; cursor: pointer; border-color: var(--secondary); }
+        
+        @keyframes unlockGlow {
+            0% { box-shadow: 0 0 0px #fff; transform: scale(1); }
+            50% { box-shadow: 0 0 30px #ffe66d; transform: scale(1.1); border-color: #ffe66d; }
+            100% { box-shadow: 0 0 0px #fff; transform: scale(1); }
+        }
+        .glowing { animation: unlockGlow 1.5s ease-out; z-index: 10; border-width: 6px !important; }
+
+        .item-img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-left: 8px solid var(--primary);
+            padding: 25px; display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .wallet-display {
+            font-size: 1.8rem; background: var(--accent);
+            padding: 15px; border-radius: 15px; text-align: center; border: 4px solid var(--dark);
+        }
+
+        .cart-box { flex-grow: 1; border: 3px dashed #aaa; border-radius: 15px; padding: 15px; overflow-y: auto; background: white; }
+        
+        .cart-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid #eee; padding: 8px 0;
+        }
+
+        .minus-btn {
+            background: #ff6b6b; color: white; border: none; 
+            border-radius: 5px; width: 25px; height: 25px; 
+            cursor: pointer; font-weight: bold;
+        }
+
+        #practice-slide {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 8000;
+            display: none; justify-content: center; align-items: center;
+        }
+
+        .receipt-paper {
+            background: white; width: 650px; padding: 30px;
+            border-radius: 10px; position: relative;
+            max-height: 90vh; overflow-y: auto;
+        }
+
+        .sentence-box {
+            background: #f9f9f9; padding: 15px; margin: 15px 0;
+            border-left: 5px solid var(--secondary); font-size: 1.2rem;
+            border-radius: 5px;
+        }
+
+        .drop-zone {
+            display: inline-block; min-width: 100px; border-bottom: 3px solid #333;
+            margin: 0 5px; text-align: center; color: #2980b9; font-weight: bold;
+            padding: 0 5px;
+        }
+
+        .word-bank { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .draggable-word {
+            background: #e1f5fe; padding: 8px 16px; border-radius: 8px;
+            cursor: pointer; border: 2px solid #81d4fa; font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        #success-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #4facfe 0%, #00f2fe 100%);
+            z-index: 9000; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        #success-layer::before {
+            content: ""; position: absolute; top:0; left:0; width:100%; height:100%;
+            background: url('package success.gif') center no-repeat;
+            background-size: contain; opacity: 0.5; pointer-events: none;
+        }
+
+        .score-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 140px; font-weight: bold;
+            background: linear-gradient(to bottom, #fff7ad 0%, #ffd700 40%, #ff9d00 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 8px #007aff;
+            filter: drop-shadow(0 10px 0 #0056b3) drop-shadow(0 15px 10px rgba(0,0,0,0.3));
+            letter-spacing: -2px; z-index: 9001;
+            margin-bottom: 20px;
+        }
+
+        #kb-panel { 
+            width: 500px; padding: 20px; border-radius: 20px;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; border: 5px solid var(--dark);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            display: none; z-index: 2000;
+        }
+        #kb-screen { 
+            height: 60px; font-size: 2rem; line-height: 60px; 
+            margin-bottom: 15px; background: #eee; text-align: center; border-radius: 10px;
+        }
+        #keys-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        #keys-grid button { padding: 12px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid #ccc; }
+
+        .btn-action { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen"><button class="btn-start" onclick="startGame()">Start Shopping</button></div>
+    <audio id="bg-music" loop><source src="background music.mp3" type="audio/mpeg"></audio>
+
+    <div id="success-layer">
+        <div class="score-text" id="final-score-val">100%</div>
+        <button onclick="resetOrder()" class="btn-start" style="font-size: 2rem; padding: 20px 50px; z-index: 9002; box-shadow: 0 8px 0 #ccaa00;">PLAY AGAIN 🛍️</button>
+    </div>
+
+    <div id="practice-slide">
+        <div class="receipt-paper">
+            <h2 style="text-align: center; border-bottom: 2px dashed #ccc; margin-top: 0;">SHOPPING RECEIPT</h2>
+            <div id="practice-content"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="document.getElementById('practice-slide').style.display='none'" style="flex:1; background: #95a5a6;" class="btn-action">← RETURN TO SHOP</button>
+                <button id="final-pack-btn" onclick="validatePractice()" style="flex:2; background:var(--secondary); color:white;" class="btn-action">PACK MY ORDER 📦</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div class="shop-area" id="shop-grid"></div>
+        <div class="sidebar">
+            <div class="wallet-display">💵 Balance: $<span id="balance">0</span></div>
+            <div style="background: #eee; padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between;">
+                <button onclick="toggleMusic()" id="music-btn">🎵 ON</button>
+                <input type="range" min="0" max="1" step="0.1" value="0.5" onchange="document.getElementById('bg-music').volume = this.value; music.volume = this.value;">
+            </div>
+            <button style="background:#3498db; color:white;" class="btn-action" onclick="togglePanel('kb-panel')">⌨️ Spell to Unlock</button>
+            <button style="background:#27ae60; color:white;" class="btn-action" onclick="launchPacman()">💰 EARN MONEY</button>
+            <button style="background:#e67e22; color:white;" class="btn-action" onclick="fullReset()">🔄 RESET SHOP</button>
+            <h3>Shopping Bag</h3>
+            <div class="cart-box" id="cart-list">Empty</div>
+            <div style="font-weight: bold; font-size: 1.5rem;">Total: $<span id="total-cost">0</span></div>
+            <button id="pay-btn" style="background:var(--primary); color:white; font-size: 1.3rem;" class="btn-action" onclick="handlePay()" disabled>PAY NOW</button>
+        </div>
+    </div>
+
+    <div id="kb-panel">
+        <div class="panel-header" onmousedown="dragStart(event, 'kb-panel')" style="background: var(--dark); color: white; padding: 10px; cursor: move; display: flex; justify-content: space-between; border-radius: 14px 14px 0 0; margin: -20px -20px 15px -20px;">
+            <span>⌨️ SPELL TO UNLOCK</span>
+            <span style="cursor:pointer" onclick="togglePanel('kb-panel')">✖</span>
+        </div>
+        <div id="kb-screen">...</div>
+        <div id="keys-grid"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+            <button onclick="toggleCase()" id="case-btn" style="padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">UPPERCASE</button>
+            <button onclick="checkSpelling()" style="padding: 10px; background:#3498db; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">CHECK WORD</button>
+        </div>
+    </div>
+
+    <div id="floating-reward-container" style="position: fixed; top: 20px; right: 20px; width: 220px; background: white; border: 5px solid #ffd700; border-radius: 20px; padding: 15px; z-index: 9999; display: none; text-align: center;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px 0;">
+            <button class="adj-btn" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: #27ae60; color: white; cursor: pointer;" onclick="adjustManual(-200)">-</button>
+            <div style="font-size: 1.6rem; font-weight: bold;">$<span id="float-cash">0</span></div>
+            <button class="adj-btn" style="width: 35px; height: 35px; border-radius: 50%; border: none; background: #27ae60; color: white; cursor: pointer;" onclick="adjustManual(200)">+</button>
+        </div>
+        <button onclick="claimMoneyAndExit()" style="background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%;">Return to Shop</button>
+    </div>
+    <iframe id="game-frame" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 5000; display: none; background: black;"></iframe>
+
+    <script>
+        const items = ["dress", "skirt", "sweater", "T-shirt", "pants", "shorts", "sneakers", "socks", "coat", "vest", "scarf", "gloves"];
+        const inherentlyPlural = ["pants", "shorts", "sneakers", "socks", "gloves"];
+        const prices = { dress:300, skirt:200, sweater:400, "T-shirt":200, pants:200, shorts:100, sneakers:600, socks:100, coat:700, vest:300, scarf:200, gloves:200 };
+
+        let balance = 0, cart = {}, unlockedItems = new Set(), currentTyped = "", isUpper = true, practiceData = [];
+        const sfxUnlock = new Audio('unlock clothes.mp3'), sfxSuccess = new Audio('success.mp3'), sfxClick = new Audio('https://www.soundjay.com/buttons/button-16.mp3');
+        
+        sfxUnlock.volume = 1.0; sfxSuccess.volume = 1.0; sfxClick.volume = 1.0;
+        const music = document.getElementById('bg-music'); music.volume = 0.3;
+
+        function startGame() { document.getElementById('start-screen').style.display = 'none'; document.getElementById('game-container').style.display = 'grid'; music.play(); initShop(); initKeyboard(); }
+        function toggleMusic() { if(music.paused) { music.play(); document.getElementById('music-btn').innerText = "🎵 ON"; } else { music.pause(); document.getElementById('music-btn').innerText = "🎵 OFF"; } }
+
+        function initShop() {
+            const grid = document.getElementById('shop-grid'); grid.innerHTML = '';
+            items.forEach(id => {
+                const isUnlocked = unlockedItems.has(id);
+                const card = document.createElement('div');
+                card.className = `item-card ${isUnlocked ? 'unlocked' : ''}`;
+                card.setAttribute('data-id', id);
+                card.onclick = () => { if(isUnlocked) { sfxClick.play(); addToCart(id); } };
+                card.innerHTML = `<img src="${id}.png" class="item-img" onerror="this.src='https://via.placeholder.com/100?text=${id}'">
+                                  <div style="font-weight:bold">${id}</div><div style="color:green">$${prices[id]}</div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleCase() { isUpper = !isUpper; document.getElementById('case-btn').innerText = isUpper ? "UPPERCASE" : "lowercase"; initKeyboard(); }
+
+        function checkSpelling() {
+            let attempt = currentTyped.toLowerCase();
+            if(items.some(i => i.toLowerCase() === attempt)) {
+                let actualItem = items.find(i => i.toLowerCase() === attempt);
+                if(!unlockedItems.has(actualItem)) { 
+                    unlockedItems.add(actualItem); sfxUnlock.play(); initShop(); triggerGlow(actualItem); 
+                }
+                currentTyped = ""; updateKBScreen();
+            }
+        }
+
+        function handlePay() { sfxClick.play(); openPracticeSlide(); }
+
+        function openPracticeSlide() {
+            const content = document.getElementById('practice-content'); content.innerHTML = ''; practiceData = [];
+            Object.keys(cart).forEach((id, index) => {
+                const qty = cart[id];
+                const isPlural = inherentlyPlural.includes(id) || qty > 1;
+                const displayId = (qty > 1 && !inherentlyPlural.includes(id)) ? id + "es" : id; // Simple pluralization
+                const qCorrect = isPlural ? "are the" : "is the", aCorrect = isPlural ? "They’re" : "It’s";
+                const block = document.createElement('div');
+                block.className = 'sentence-box';
+                block.innerHTML = `<p>🛒 ${qty}x ${displayId}</p><p>Q: How much <span class="drop-zone" id="q-${index}">____</span> ${displayId}?</p><p>A: <span class="drop-zone" id="a-${index}">____</span> ${prices[id] * qty} dollars.</p><div class="word-bank"></div>`;
+                content.appendChild(block);
+                [qCorrect, aCorrect, "is it", "they are"].sort(() => Math.random() - 0.5).forEach(w => {
+                    const span = document.createElement('span'); span.className = 'draggable-word'; span.innerText = w;
+                    span.onclick = () => { sfxClick.play(); if(w.includes("the") || w === "is it") { practiceData[index].qSelected = w; document.getElementById(`q-${index}`).innerText = w; } else { practiceData[index].aSelected = w; document.getElementById(`a-${index}`).innerText = w; } };
+                    block.querySelector('.word-bank').appendChild(span);
+                });
+                practiceData.push({ qCorrect, aCorrect, qSelected: "", aSelected: "" });
+            });
+            document.getElementById('practice-slide').style.display = 'flex';
+        }
+
+        function validatePractice() {
+            let correct = 0, total = practiceData.length * 2;
+            practiceData.forEach(d => { if(d.qSelected === d.qCorrect) correct++; if(d.aSelected === d.aCorrect) correct++; });
+            let score = Math.round((correct / total) * 100);
+            if(score === 100) {
+                sfxSuccess.play(); 
+                document.getElementById('practice-slide').style.display = 'none';
+                document.getElementById('final-score-val').innerText = score + "%";
+                document.getElementById('success-layer').style.display = 'flex';
+                // Final confirmation - cart reset handled by resetOrder()
+            } else { alert("Score: " + score + "%. Check your grammar!"); }
+        }
+
+        function resetOrder() { cart = {}; updateCartUI(); document.getElementById('success-layer').style.display = 'none'; }
+        
+        function fullReset() { 
+            if(confirm("Reset everything?")) { 
+                balance = 0; cart = {}; unlockedItems = new Set(); 
+                document.getElementById('balance').innerText = 0; 
+                updateCartUI(); initShop(); 
+            } 
+        }
+
+        function initKeyboard() {
+            const grid = document.getElementById('keys-grid'); grid.innerHTML = '';
+            "abcdefghijklmnopqrstuvwxyz-".split('').forEach(char => {
+                const b = document.createElement('button'); 
+                b.innerText = isUpper ? char.toUpperCase() : char.toLowerCase(); 
+                b.onclick = () => { currentTyped += b.innerText; updateKBScreen(); }; 
+                grid.appendChild(b);
+            });
+            const del = document.createElement('button'); del.innerText = "DEL"; del.style.background = "#e74c3c"; del.style.color = "white"; del.onclick = () => { currentTyped = currentTyped.slice(0,-1); updateKBScreen(); }; grid.appendChild(del);
+        }
+
+        function updateKBScreen() { document.getElementById('kb-screen').innerText = currentTyped || "..."; }
+        function togglePanel(id) { const p = document.getElementById(id); p.style.display = (p.style.display === 'block') ? 'none' : 'block'; }
+        
+        function addToCart(id) {
+            if (balance >= prices[id]) {
+                cart[id] = (cart[id] || 0) + 1;
+                balance -= prices[id]; // Deduct immediately
+                document.getElementById('balance').innerText = balance;
+                updateCartUI();
+            } else {
+                alert("Not enough money! Go play Pacman to earn more.");
+            }
+        }
+        
+        function removeFromCart(id) {
+            if(cart[id] > 0) {
+                cart[id]--;
+                balance += prices[id]; // Refund immediately
+                if(cart[id] === 0) delete cart[id];
+                document.getElementById('balance').innerText = balance;
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-list'); let h = '', t = 0;
+            for (let id in cart) { 
+                t += prices[id] * cart[id]; 
+                h += `<div class="cart-item"><span>${id} x${cart[id]}</span><button class="minus-btn" onclick="removeFromCart('${id}')">-</button></div>`; 
+            }
+            list.innerHTML = h || 'Empty'; document.getElementById('total-cost').innerText = t;
+            document.getElementById('pay-btn').disabled = (t === 0);
+        }
+
+        function triggerGlow(id) { const el = document.querySelector(`[data-id="${id}"]`); if(el) { el.classList.add('glowing'); setTimeout(() => el.classList.remove('glowing'), 2000); } }
+
+        function launchPacman() {
+            const frame = document.getElementById('game-frame'); frame.src = "PACMAN GAME/pacman.html"; frame.style.display = 'block';
+            document.getElementById('floating-reward-container').style.display = 'block';
+            scoreWatcher = setInterval(() => { try { let s = frame.contentWindow.score || 0; if(s > 0) document.getElementById('float-cash').innerText = s * 200; } catch(e) {} }, 500);
+        }
+
+        function adjustManual(v) { let c = parseInt(document.getElementById('float-cash').innerText); document.getElementById('float-cash').innerText = Math.max(0, c + v); }
+        function claimMoneyAndExit() { balance += parseInt(document.getElementById('float-cash').innerText); document.getElementById('balance').innerText = balance; clearInterval(scoreWatcher); document.getElementById('game-frame').style.display = 'none'; document.getElementById('floating-reward-container').style.display = 'none'; document.getElementById('float-cash').innerText = "0"; updateCartUI(); }
+
+        let dragEl = null, dx = 0, dy = 0;
+        function dragStart(e, id) {
+            dragEl = document.getElementById(id); dx = dragEl.offsetLeft - e.clientX; dy = dragEl.offsetTop - e.clientY;
+            document.onmousemove = (ev) => { dragEl.style.left = (ev.clientX + dx) + 'px'; dragEl.style.top = (ev.clientY + dy) + 'px'; };
+            document.onmouseup = () => { document.onmousemove = null; };
+        }
+    </script>
+</body>
+</html>
