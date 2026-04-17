@@ -359,7 +359,7 @@
         function triggerGlow(id) { const el = document.querySelector(`[data-id="${id}"]`); if(el) { el.classList.add('glowing'); setTimeout(() => el.classList.remove('glowing'), 2000); } }
 
         function launchPacman() {
-            const frame = document.getElementById('game-frame'); frame.src = "PACMAN GAME/pacman.html"; frame.style.display = 'block';
+            const frame = document.getElementById('game-frame'); frame.src = "pacman-game/pacman.html"; frame.style.display = 'block';
             document.getElementById('floating-reward-container').style.display = 'block';
             scoreWatcher = setInterval(() => { try { let s = frame.contentWindow.score || 0; if(s > 0) document.getElementById('float-cash').innerText = s * 200; } catch(e) {} }, 500);
         }
