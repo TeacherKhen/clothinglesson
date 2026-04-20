@@ -271,16 +271,39 @@
             const content = document.getElementById('practice-content'); content.innerHTML = ''; practiceData = [];
             Object.keys(cart).forEach((id, index) => {
                 const qty = cart[id];
+                
+                // --- GRAMMAR LOGIC START ---
+                let displayId = id;
+                // Apply specific pluralization rules
+                if (qty > 1 && !inherentlyPlural.includes(id)) {
+                    if (id === "scarf") {
+                        displayId = "scarfs";
+                    } else if (id === "dress") {
+                        displayId = "dresses";
+                    } else {
+                        displayId = id + "s";
+                    }
+                }
+                // Determine Is/Are based on quantity or item nature
                 const isPlural = inherentlyPlural.includes(id) || qty > 1;
-                const displayId = (qty > 1 && !inherentlyPlural.includes(id)) ? id + "es" : id; // Simple pluralization
                 const qCorrect = isPlural ? "are the" : "is the", aCorrect = isPlural ? "They’re" : "It’s";
+                // --- GRAMMAR LOGIC END ---
+
                 const block = document.createElement('div');
                 block.className = 'sentence-box';
                 block.innerHTML = `<p>🛒 ${qty}x ${displayId}</p><p>Q: How much <span class="drop-zone" id="q-${index}">____</span> ${displayId}?</p><p>A: <span class="drop-zone" id="a-${index}">____</span> ${prices[id] * qty} dollars.</p><div class="word-bank"></div>`;
                 content.appendChild(block);
+
                 [qCorrect, aCorrect, "is it", "they are"].sort(() => Math.random() - 0.5).forEach(w => {
                     const span = document.createElement('span'); span.className = 'draggable-word'; span.innerText = w;
-                    span.onclick = () => { sfxClick.play(); if(w.includes("the") || w === "is it") { practiceData[index].qSelected = w; document.getElementById(`q-${index}`).innerText = w; } else { practiceData[index].aSelected = w; document.getElementById(`a-${index}`).innerText = w; } };
+                    span.onclick = () => { 
+                        sfxClick.play(); 
+                        if(w.includes("the") || w === "is it") { 
+                            practiceData[index].qSelected = w; document.getElementById(`q-${index}`).innerText = w; 
+                        } else { 
+                            practiceData[index].aSelected = w; document.getElementById(`a-${index}`).innerText = w; 
+                        } 
+                    };
                     block.querySelector('.word-bank').appendChild(span);
                 });
                 practiceData.push({ qCorrect, aCorrect, qSelected: "", aSelected: "" });
@@ -297,7 +320,6 @@
                 document.getElementById('practice-slide').style.display = 'none';
                 document.getElementById('final-score-val').innerText = score + "%";
                 document.getElementById('success-layer').style.display = 'flex';
-                // Final confirmation - cart reset handled by resetOrder()
             } else { alert("Score: " + score + "%. Check your grammar!"); }
         }
 
@@ -328,7 +350,7 @@
         function addToCart(id) {
             if (balance >= prices[id]) {
                 cart[id] = (cart[id] || 0) + 1;
-                balance -= prices[id]; // Deduct immediately
+                balance -= prices[id];
                 document.getElementById('balance').innerText = balance;
                 updateCartUI();
             } else {
@@ -339,7 +361,7 @@
         function removeFromCart(id) {
             if(cart[id] > 0) {
                 cart[id]--;
-                balance += prices[id]; // Refund immediately
+                balance += prices[id];
                 if(cart[id] === 0) delete cart[id];
                 document.getElementById('balance').innerText = balance;
                 updateCartUI();
